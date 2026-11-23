@@ -1,0 +1,31 @@
+name: 每周同步 prompts
+
+on:
+  schedule:
+    - cron: '17 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 转换上游数据
+        run: python converter.py
+      - name: 提交变更
+        run: |
+          git add data/prompts.json
+          if git diff --cached --quiet; then
+            echo '没有检测到数据变化。'
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'chore: sync upstream prompts'
+          git push
